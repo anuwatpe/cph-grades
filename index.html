@@ -227,7 +227,7 @@
             </div>
 
             <!-- Grade Chart & Overall Progress -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 <!-- Progress Bar -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 flex flex-col justify-center">
                     <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
@@ -249,6 +249,17 @@
                     </h3>
                     <div class="relative h-64 w-full">
                         <canvas id="gradeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Criteria Chart (เพิ่มใหม่) -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 flex flex-col">
+                    <h3 class="text-lg font-semibold mb-1 flex items-center gap-2 text-slate-800">
+                        <i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i> สรุปเกณฑ์วิชาชีพ
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">(เฉพาะหมวดวิชาชีพเป๊ะๆ)</p>
+                    <div class="relative flex-grow w-full min-h-[180px]">
+                        <canvas id="criteriaChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -326,7 +337,8 @@
         let filteredData = [];
         let selectedTerms = [];
         let selectedYears = [];
-        let gradeChartInstance = null; // สำหรับเก็บ instance ของกราฟ
+        let gradeChartInstance = null; // สำหรับเก็บ instance ของกราฟผลการเรียน
+        let criteriaChartInstance = null; // สำหรับเก็บ instance ของกราฟเกณฑ์วิชาชีพ
 
         // Initialize Icons
         lucide.createIcons();
@@ -608,6 +620,64 @@
                     }
                 });
             }
+
+            // --- อัปเดตกราฟเกณฑ์วิชาชีพ (Criteria Chart) ---
+            const ctxCriteria = document.getElementById('criteriaChart').getContext('2d');
+            let passed = 0;
+            let failed = 0;
+            let pending = 0;
+
+            filteredData.forEach(item => {
+                // ตรวจสอบว่าเป็น "วิชาชีพ" แบบเป๊ะๆ เท่านั้น ไม่เอา "พื้นฐานวิชาชีพ"
+                if (item.category && item.category.trim() === 'วิชาชีพ') {
+                    if (!item.isSubmitted) {
+                        pending++;
+                    } else {
+                        const belowC = item.grades.Dp + item.grades.D + item.grades.F;
+                        if (belowC === 0) passed++;
+                        else failed++;
+                    }
+                }
+            });
+
+            const criteriaDataValues = [passed, failed, pending];
+
+            if (criteriaChartInstance) {
+                criteriaChartInstance.data.datasets[0].data = criteriaDataValues;
+                criteriaChartInstance.update();
+            } else {
+                criteriaChartInstance = new Chart(ctxCriteria, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['ผ่าน', 'ไม่ผ่าน', 'รอเกรด'],
+                        datasets: [{
+                            data: criteriaDataValues,
+                            backgroundColor: [
+                                '#10b981', // ผ่าน (Emerald)
+                                '#ef4444', // ไม่ผ่าน (Red)
+                                '#cbd5e1'  // รอเกรด (Slate)
+                            ],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { 
+                                position: 'bottom',
+                                labels: { font: { family: 'Kanit', size: 12 }, usePointStyle: true, padding: 15 }
+                            },
+                            tooltip: {
+                                titleFont: { family: 'Kanit' },
+                                bodyFont: { family: 'Kanit' }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
         }
 
         function renderTable() {
@@ -633,7 +703,8 @@
 
                 // --- เพิ่มระบบตรวจสอบเกณฑ์วิชาชีพ ---
                 let categoryStatusHtml = '<span class="text-slate-300">-</span>';
-                if (item.category && item.category.includes('วิชาชีพ')) {
+                // แก้ไขเงื่อนไขเป็น === 'วิชาชีพ' เพื่อไม่ให้ดึง 'พื้นฐานวิชาชีพ' มาด้วย
+                if (item.category && item.category.trim() === 'วิชาชีพ') {
                     if (!isSub) {
                         categoryStatusHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200"><i data-lucide="clock" class="w-3 h-3"></i> รอเกรด</span>`;
                     } else {
