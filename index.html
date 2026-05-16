@@ -97,10 +97,14 @@
             
             <!-- Filter & Action Bar -->
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="filter" class="w-5 h-5 text-slate-400"></i>
-                    <select id="year-filter" class="border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <option value="all">แสดงทุกชั้นปี</option>
+                <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
+                    <i data-lucide="filter" class="w-5 h-5 text-slate-400 hidden sm:block"></i>
+                    <select id="term-filter" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="all">ทุกภาคการศึกษา</option>
+                        <!-- Options will be populated by JS -->
+                    </select>
+                    <select id="year-filter" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        <option value="all">ทุกชั้นปี</option>
                         <option value="1">ชั้นปีที่ 1</option>
                         <option value="2">ชั้นปีที่ 2</option>
                         <option value="3">ชั้นปีที่ 3</option>
@@ -195,6 +199,7 @@
                             <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
                                 <th class="p-4 font-medium">รหัสวิชา</th>
                                 <th class="p-4 font-medium">ชื่อรายวิชา</th>
+                                <th class="p-4 font-medium">ภาคเรียน</th>
                                 <th class="p-4 font-medium">ชั้นปี</th>
                                 <th class="p-4 font-medium">ผู้รับผิดชอบ</th>
                                 <th class="p-4 font-medium text-center">ลงเวลา</th>
@@ -231,6 +236,8 @@
         // State
         let courseData = [];
         let filteredData = [];
+        let currentTermFilter = 'all';
+        let currentYearFilter = 'all';
 
         // Initialize Icons
         lucide.createIcons();
@@ -239,9 +246,15 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
             
-            // Setup Filter listener
+            // Setup Filter listeners
+            document.getElementById('term-filter').addEventListener('change', (e) => {
+                currentTermFilter = e.target.value;
+                applyFilters();
+            });
+
             document.getElementById('year-filter').addEventListener('change', (e) => {
-                filterData(e.target.value);
+                currentYearFilter = e.target.value;
+                applyFilters();
             });
         });
 
@@ -268,12 +281,16 @@
         function processData(data) {
             try {
                 // Map and clean data based on headers
-                // Expected headers: ลำดับ,รหัสวิชา,ชื่อรายวิชา,ชั้นปี,ผู้รับผิดชอบวิชา,ลงเวลา,นำเสนอ,ส่งเกรด
                 courseData = data.filter(row => row['ชื่อรายวิชา'] && row['ชื่อรายวิชา'].trim() !== '').map(row => {
+                    const academicYear = row['ปีการศึกษา'] || '-';
+                    const semester = row['ภาคการศึกษา'] || '-';
+                    const term = (academicYear !== '-' && semester !== '-') ? `${semester}/${academicYear}` : '-';
+
                     return {
                         id: row['รหัสวิชา'] || '-',
                         name: row['ชื่อรายวิชา'] || 'ไม่มีชื่อ',
                         year: row['ชั้นปี'] || '-',
+                        term: term,
                         teacher: row['ผู้รับผิดชอบวิชา'] || row['ผู้รับผิดชอบรายวิชา'] || '-',
                         isScheduled: String(row['ลงเวลา']).trim().toUpperCase() === 'TRUE',
                         isPresented: String(row['นำเสนอ']).trim().toUpperCase() === 'TRUE',
@@ -281,12 +298,23 @@
                     };
                 });
 
+                // Populate Term Dropdown dynamically
+                const terms = [...new Set(courseData.map(item => item.term).filter(t => t !== '-'))].sort();
+                const termSelect = document.getElementById('term-filter');
+                termSelect.innerHTML = '<option value="all">ทุกภาคการศึกษา</option>';
+                terms.forEach(term => {
+                    const option = document.createElement('option');
+                    option.value = term;
+                    option.textContent = `ภาคเรียนที่ ${term}`;
+                    termSelect.appendChild(option);
+                });
+
                 // Set updated time
                 const now = new Date();
                 document.getElementById('last-updated').textContent = `อัปเดต: ${now.toLocaleTimeString('th-TH')}`;
 
                 // Initial render
-                filterData('all');
+                applyFilters();
                 
                 // Show dashboard
                 document.getElementById('loading-state').classList.add('hidden');
@@ -299,12 +327,12 @@
             }
         }
 
-        function filterData(year) {
-            if (year === 'all') {
-                filteredData = courseData;
-            } else {
-                filteredData = courseData.filter(item => item.year === year);
-            }
+        function applyFilters() {
+            filteredData = courseData.filter(item => {
+                const matchTerm = currentTermFilter === 'all' || item.term === currentTermFilter;
+                const matchYear = currentYearFilter === 'all' || item.year === currentYearFilter;
+                return matchTerm && matchYear;
+            });
             updateDashboard();
             renderTable();
         }
@@ -356,6 +384,7 @@
                 tr.innerHTML = `
                     <td class="p-4 border-b border-slate-100 text-sm font-medium text-slate-700">${item.id}</td>
                     <td class="p-4 border-b border-slate-100 text-sm text-slate-800">${item.name}</td>
+                    <td class="p-4 border-b border-slate-100 text-sm text-slate-500">${item.term !== '-' ? item.term : '-'}</td>
                     <td class="p-4 border-b border-slate-100 text-sm text-slate-500">ปี ${item.year}</td>
                     <td class="p-4 border-b border-slate-100 text-sm text-slate-600">${item.teacher}</td>
                     <td class="p-4 border-b border-slate-100 text-center">
