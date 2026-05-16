@@ -261,13 +261,15 @@
                     </h3>
                 </div>
                 <div class="overflow-x-auto table-container">
-                    <table class="w-full text-left border-collapse min-w-[1200px]">
+                    <table class="w-full text-left border-collapse min-w-[1400px]">
                         <thead>
                             <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
                                 <th class="p-3 font-medium align-middle" rowspan="2">รหัสวิชา</th>
                                 <th class="p-3 font-medium align-middle" rowspan="2">ชื่อรายวิชา</th>
                                 <th class="p-3 font-medium align-middle text-center" rowspan="2">ภาค/ปี</th>
                                 <th class="p-3 font-medium align-middle text-center" rowspan="2">ผู้รับผิดชอบ</th>
+                                <th class="p-3 font-medium align-middle text-center" rowspan="2">หมวดวิชา</th>
+                                <th class="p-3 font-medium align-middle text-center" rowspan="2">เกณฑ์วิชาชีพ<br><span class="text-xs text-slate-400 font-normal">(>= C)</span></th>
                                 <th class="p-2 font-medium text-center border-l border-slate-200 bg-slate-50" colspan="3">สถานะการดำเนินการ</th>
                                 <th class="p-2 font-medium text-center border-l border-slate-200 bg-sky-50 text-primary" colspan="10">ผลการศึกษา (เกรด)</th>
                             </tr>
@@ -436,6 +438,7 @@
                         year: row['ชั้นปี'] || '-',
                         term: term,
                         teacher: row['ผู้รับผิดชอบวิชา'] || row['ผู้รับผิดชอบรายวิชา'] || '-',
+                        category: row['หมวดวิชา'] || '-',
                         isScheduled: String(row['ลงเวลา']).trim().toUpperCase() === 'TRUE',
                         isPresented: String(row['นำเสนอ']).trim().toUpperCase() === 'TRUE',
                         isSubmitted: String(row['ส่งเกรด']).trim().toUpperCase() === 'TRUE',
@@ -628,11 +631,29 @@
                 const g = item.grades;
                 const isSub = item.isSubmitted;
 
+                // --- เพิ่มระบบตรวจสอบเกณฑ์วิชาชีพ ---
+                let categoryStatusHtml = '<span class="text-slate-300">-</span>';
+                if (item.category && item.category.includes('วิชาชีพ')) {
+                    if (!isSub) {
+                        categoryStatusHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200"><i data-lucide="clock" class="w-3 h-3"></i> รอเกรด</span>`;
+                    } else {
+                        // จำนวนนักศึกษาที่ได้เกรดต่ำกว่า C (D+, D, F)
+                        const belowC = g.Dp + g.D + g.F;
+                        if (belowC === 0) {
+                            categoryStatusHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200"><i data-lucide="check" class="w-3 h-3"></i> ผ่าน</span>`;
+                        } else {
+                            categoryStatusHtml = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 border border-red-200" title="มีนักศึกษาได้ต่ำกว่า C จำนวน ${belowC} คน"><i data-lucide="x" class="w-3 h-3"></i> ไม่ผ่าน (${belowC})</span>`;
+                        }
+                    }
+                }
+
                 tr.innerHTML = `
                     <td class="p-3 border-b border-slate-100 text-sm font-medium text-slate-700 whitespace-nowrap">${item.id}</td>
                     <td class="p-3 border-b border-slate-100 text-sm text-slate-800 min-w-[200px]">${item.name}</td>
                     <td class="p-3 border-b border-slate-100 text-sm text-slate-500 text-center">${item.term !== '-' ? item.term : '-'}</td>
                     <td class="p-3 border-b border-slate-100 text-sm text-slate-600 text-center whitespace-nowrap">${item.teacher}</td>
+                    <td class="p-3 border-b border-slate-100 text-sm text-slate-600 text-center whitespace-nowrap">${item.category}</td>
+                    <td class="p-3 border-b border-slate-100 text-center">${categoryStatusHtml}</td>
                     
                     <!-- สถานะ -->
                     <td class="p-2 border-b border-l border-slate-100 text-center">${getStatusIcon(item.isScheduled)}</td>
