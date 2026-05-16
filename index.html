@@ -492,19 +492,42 @@
                 });
 
                 // Populate Term Dropdown dynamically
-                const terms = [...new Set(courseData.map(item => item.term).filter(t => t !== '-'))].sort();
-                const termContainer = document.getElementById('term-options');
+                let terms = [...new Set(courseData.map(item => item.term).filter(t => t !== '-'))];
                 
+                // เรียงลำดับเทอมจากใหม่ล่าสุดไปเก่าสุด
+                terms.sort((a, b) => {
+                    const partsA = a.split('/');
+                    const partsB = b.split('/');
+                    const yearA = parseInt(partsA[1] || 0);
+                    const semA = parseInt(partsA[0] || 0);
+                    const yearB = parseInt(partsB[1] || 0);
+                    const semB = parseInt(partsB[0] || 0);
+                    
+                    if (yearA !== yearB) return yearB - yearA; // ปีใหม่กว่าขึ้นก่อน
+                    return semB - semA; // เทอมใหม่กว่าขึ้นก่อน
+                });
+
+                // ตั้งค่า Smart Default เป็นเทอมล่าสุด
+                const latestTerm = terms.length > 0 ? terms[0] : null;
+                selectedTerms = latestTerm ? [latestTerm] : [];
+
+                // อัปเดตข้อความปุ่มทันที
+                if (latestTerm) {
+                    document.getElementById('term-btn-text').textContent = `ภาคเรียนที่ ${latestTerm}`;
+                }
+
+                const termContainer = document.getElementById('term-options');
                 let termHtml = `
                     <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
-                        <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="all" checked>
+                        <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="all" ${selectedTerms.length === 0 ? 'checked' : ''}>
                         <span>ทุกภาคการศึกษา</span>
                     </label>
                 `;
                 terms.forEach(term => {
+                    const isChecked = selectedTerms.includes(term) ? 'checked' : '';
                     termHtml += `
                         <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
-                            <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="${term}">
+                            <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="${term}" ${isChecked}>
                             <span>ภาคเรียนที่ ${term}</span>
                         </label>
                     `;
