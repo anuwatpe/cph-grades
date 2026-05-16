@@ -45,7 +45,7 @@
     <!-- CSV Parser (PapaParse) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
-    <!-- Chart.js และ Plugin สำหรับวาดกราฟและตัวเลข -->
+    <!-- Chart.js สำหรับวาดกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
@@ -300,14 +300,15 @@
                                 <th class="p-2 font-medium align-middle text-center" rowspan="2">ผู้รับผิดชอบ</th>
                                 <th class="p-2 font-medium align-middle text-center" rowspan="2">หมวดวิชา</th>
                                 <th class="p-2 font-medium align-middle text-center" rowspan="2">เกณฑ์วิชาชีพ<br><span class="text-xs text-slate-400 font-normal">(>= C)</span></th>
-                                <th class="p-1 font-medium text-center border-l border-slate-200 bg-slate-50" colspan="3">สถานะการดำเนินการ</th>
+                                <th class="p-1 font-medium text-center border-l border-slate-200 bg-slate-50" colspan="2">สถานะการดำเนินการ</th>
+                                <!-- เปลี่ยนคอลัมน์ "ส่งเกรด" เป็นปุ่มลงเวลาฯ -->
+                                <th class="p-2 font-medium text-center border-l border-slate-200 bg-slate-50" rowspan="2">ลงเวลาและ<br>อัพโหลดไฟล์ มคอ</th>
                                 <th class="p-1 font-medium text-center border-l border-slate-200 bg-sky-50 text-primary" colspan="10">ผลการศึกษา (เกรด)</th>
                             </tr>
                             <tr class="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
                                 <!-- Status -->
                                 <th class="p-1 font-medium text-center border-l border-slate-200">ลงเวลา</th>
                                 <th class="p-1 font-medium text-center">นำเสนอ</th>
-                                <th class="p-1 font-medium text-center">ส่งเกรด</th>
                                 <!-- Grades -->
                                 <th class="p-1 font-medium text-center border-l border-slate-200 bg-sky-50">A</th>
                                 <th class="p-1 font-medium text-center bg-sky-50">B+</th>
@@ -350,7 +351,9 @@
     <script>
         // Data URL
         const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZ62MSnhzdFz1LG2yd4nPGR9FMjnUAMSs1WCzEeixpjJTiSPeZHdqFNIlwaWokwyt3iVt7WdG5_kz6/pub?gid=486231050&single=true&output=csv';
-        
+        // URL สำหรับลิงก์ปุ่ม "ลงเวลาและอัพโหลดไฟล์ มคอ"
+        const UPLOAD_URL = 'https://docs.google.com/spreadsheets/d/1fquORX-yAnmRZMWwC0Sh6gSlQrDWzpGwHH43_K_SW2E/edit?usp=sharing';
+
         // State
         let courseData = [];
         let filteredData = [];
@@ -823,6 +826,28 @@
                     }
                 }
 
+                // ปุ่มลงเวลาและอัพโหลดไฟล์ (เพิ่มในส่วนที่แก้ไข)
+                // ตรวจสอบว่าถ้าส่งเกรดแล้ว จะขึ้นสีเขียวบอกว่าอัพโหลดแล้ว ถ้ายัง จะเป็นปุ่มให้คลิกไปทำ
+                let uploadActionHtml = '';
+                if (isSub) {
+                    uploadActionHtml = `
+                        <div class="flex justify-center">
+                            <span class="inline-flex items-center justify-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-600 rounded text-xs font-medium border border-emerald-200 whitespace-nowrap">
+                                <i data-lucide="check" class="w-3 h-3"></i> เสร็จสิ้น
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    uploadActionHtml = `
+                        <div class="flex justify-center">
+                            <a href="${UPLOAD_URL}" target="_blank" class="inline-flex items-center justify-center gap-1 px-3 py-1 bg-primary hover:bg-sky-600 text-white rounded text-xs font-medium shadow-sm transition-colors whitespace-nowrap">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> ลงเวลา/อัพโหลด
+                            </a>
+                        </div>
+                    `;
+                }
+
+
                 // ปรับขนาดของแต่ละ column ลงเพื่อให้แสดงผลกระชับขึ้น
                 tr.innerHTML = `
                     <td class="p-2 border-b border-slate-100 text-xs font-medium text-slate-700 whitespace-nowrap">${item.id}</td>
@@ -835,7 +860,7 @@
                     <!-- สถานะ -->
                     <td class="p-1 border-b border-l border-slate-100 text-center">${getStatusIcon(item.isScheduled)}</td>
                     <td class="p-1 border-b border-slate-100 text-center">${getStatusIcon(item.isPresented)}</td>
-                    <td class="p-1 border-b border-slate-100 text-center">${getStatusIcon(item.isSubmitted)}</td>
+                    <td class="p-2 border-b border-slate-100 text-center">${uploadActionHtml}</td>
                     
                     <!-- เกรด -->
                     <td class="p-1 border-b border-l border-slate-100 text-center bg-sky-50/30 text-xs font-medium">${isSub ? g.A : '-'}</td>
