@@ -63,8 +63,8 @@
                 <div class="flex items-center gap-3">
                     <i data-lucide="clipboard-check" class="w-8 h-8 text-primary"></i>
                     <div>
-                        <h1 class="text-xl font-bold leading-tight">ระบบติดตามการทบทวนเกรดรายวิชา</h1>
-                        <p class="text-xs text-slate-300">วิทยาลัยการสาธารณสุขสิรินธร</p>
+                        <h1 class="text-xl font-bold leading-tight">ระบบติดตามการทบทวนเกรดรายวิชาและแสดงผลการศึกษา</h1>
+                        <p class="text-xs text-slate-300">สาขาวิชาสาธารณสุขชุมชน วิทยาลัยการสาธารณสุขสิรินธร จังหวัดขอนแก่น</p>
                     </div>
                 </div>
                 <div class="hidden sm:flex items-center gap-2 text-sm text-slate-300">
@@ -99,20 +99,55 @@
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                 <div class="flex flex-col sm:flex-row items-center gap-2 w-full sm:w-auto">
                     <i data-lucide="filter" class="w-5 h-5 text-slate-400 hidden sm:block"></i>
-                    <select id="term-filter" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <option value="all">ทุกภาคการศึกษา</option>
-                        <!-- Options will be populated by JS -->
-                    </select>
-                    <select id="year-filter" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
-                        <option value="all">ทุกชั้นปี</option>
-                        <option value="1">ชั้นปีที่ 1</option>
-                        <option value="2">ชั้นปีที่ 2</option>
-                        <option value="3">ชั้นปีที่ 3</option>
-                        <option value="4">ชั้นปีที่ 4</option>
-                    </select>
+                    
+                    <!-- Term Dropdown (Multi-select) -->
+                    <div class="relative w-full sm:w-auto" id="term-dropdown-wrapper">
+                        <button id="term-btn" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-between min-w-[160px] bg-white text-left transition-colors hover:bg-slate-50">
+                            <span id="term-btn-text" class="truncate max-w-[120px]">ทุกภาคการศึกษา</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 ml-2 text-slate-400 pointer-events-none"></i>
+                        </button>
+                        <div id="term-menu" class="hidden absolute z-10 mt-1 w-full sm:w-48 bg-white border border-slate-200 rounded-lg shadow-lg">
+                            <div class="p-2 space-y-1 max-h-48 overflow-y-auto" id="term-options">
+                                <!-- Options will be populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Year Dropdown (Multi-select) -->
+                    <div class="relative w-full sm:w-auto" id="year-dropdown-wrapper">
+                        <button id="year-btn" class="w-full sm:w-auto border-slate-200 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex items-center justify-between min-w-[140px] bg-white text-left transition-colors hover:bg-slate-50">
+                            <span id="year-btn-text" class="truncate max-w-[100px]">ทุกชั้นปี</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4 ml-2 text-slate-400 pointer-events-none"></i>
+                        </button>
+                        <div id="year-menu" class="hidden absolute z-10 mt-1 w-full sm:w-40 bg-white border border-slate-200 rounded-lg shadow-lg">
+                            <div class="p-2 space-y-1">
+                                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                                    <input type="checkbox" class="year-cb rounded border-slate-300 text-primary focus:ring-primary" value="all" checked>
+                                    <span>ทุกชั้นปี</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                                    <input type="checkbox" class="year-cb rounded border-slate-300 text-primary focus:ring-primary" value="1">
+                                    <span>ชั้นปีที่ 1</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                                    <input type="checkbox" class="year-cb rounded border-slate-300 text-primary focus:ring-primary" value="2">
+                                    <span>ชั้นปีที่ 2</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                                    <input type="checkbox" class="year-cb rounded border-slate-300 text-primary focus:ring-primary" value="3">
+                                    <span>ชั้นปีที่ 3</span>
+                                </label>
+                                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                                    <input type="checkbox" class="year-cb rounded border-slate-300 text-primary focus:ring-primary" value="4">
+                                    <span>ชั้นปีที่ 4</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="text-sm text-slate-500">
-                    ข้อมูลอัปเดตล่าสุดจาก Google Sheets
+                    ข้อมูลอัปเดตล่าสุดจากฐานข้อมูล
                 </div>
             </div>
 
@@ -224,8 +259,12 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 mt-auto">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-500">
-            <p>&copy; 2026 ระบบติดตามการทบทวนเกรดรายวิชา</p>
-            <p>ดึงข้อมูลเรียลไทม์จาก Google Sheets</p>
+            <p>&copy; 2026 ระบบติดตามการทบทวนเกรดรายวิชา. All rights reserved.</p>
+            <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                 <p>Developed by Anuwat Pengput</p>
+                 <p class="hidden sm:block">|</p>
+                 <p>ดึงข้อมูลเรียลไทม์จากฐานข้อมูล</p>
+            </div>
         </div>
     </footer>
 
@@ -236,8 +275,8 @@
         // State
         let courseData = [];
         let filteredData = [];
-        let currentTermFilter = 'all';
-        let currentYearFilter = 'all';
+        let selectedTerms = [];
+        let selectedYears = [];
 
         // Initialize Icons
         lucide.createIcons();
@@ -246,17 +285,74 @@
         document.addEventListener('DOMContentLoaded', () => {
             fetchData();
             
-            // Setup Filter listeners
-            document.getElementById('term-filter').addEventListener('change', (e) => {
-                currentTermFilter = e.target.value;
-                applyFilters();
+            // Setup Dropdown Toggles
+            document.getElementById('term-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('term-menu').classList.toggle('hidden');
+                document.getElementById('year-menu').classList.add('hidden'); // Close the other
             });
 
-            document.getElementById('year-filter').addEventListener('change', (e) => {
-                currentYearFilter = e.target.value;
-                applyFilters();
+            document.getElementById('year-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.getElementById('year-menu').classList.toggle('hidden');
+                document.getElementById('term-menu').classList.add('hidden'); // Close the other
             });
+
+            // Close dropdowns when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#term-dropdown-wrapper')) {
+                    document.getElementById('term-menu').classList.add('hidden');
+                }
+                if (!e.target.closest('#year-dropdown-wrapper')) {
+                    document.getElementById('year-menu').classList.add('hidden');
+                }
+            });
+
+            // Setup initial year checkboxes
+            setupCheckboxes('year-cb', 'year-btn-text', 'ทุกชั้นปี', selectedYears, applyFilters);
         });
+
+        function setupCheckboxes(cbClass, btnTextId, defaultText, stateArray, callback) {
+            const checkboxes = document.querySelectorAll(`.${cbClass}`);
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    const isChecked = e.target.checked;
+
+                    if (val === 'all') {
+                        if (isChecked) {
+                            checkboxes.forEach(c => { if (c.value !== 'all') c.checked = false; });
+                            stateArray.length = 0; // Clear array means "all"
+                        } else {
+                            e.target.checked = true; // Prevent unchecking if it's the only one
+                        }
+                    } else {
+                        const allCb = Array.from(checkboxes).find(c => c.value === 'all');
+                        if (isChecked) {
+                            allCb.checked = false;
+                            if (!stateArray.includes(val)) stateArray.push(val);
+                        } else {
+                            const index = stateArray.indexOf(val);
+                            if (index > -1) stateArray.splice(index, 1);
+                            if (stateArray.length === 0) allCb.checked = true;
+                        }
+                    }
+                    
+                    // Update Button Text
+                    const btnText = document.getElementById(btnTextId);
+                    if (stateArray.length === 0) {
+                        btnText.textContent = defaultText;
+                    } else if (stateArray.length === 1) {
+                        const label = Array.from(checkboxes).find(c => c.value === stateArray[0]).nextElementSibling.textContent;
+                        btnText.textContent = label;
+                    } else {
+                        btnText.textContent = `เลือกแล้ว (${stateArray.length})`;
+                    }
+
+                    callback();
+                });
+            });
+        }
 
         function fetchData() {
             // Show loading
@@ -300,14 +396,26 @@
 
                 // Populate Term Dropdown dynamically
                 const terms = [...new Set(courseData.map(item => item.term).filter(t => t !== '-'))].sort();
-                const termSelect = document.getElementById('term-filter');
-                termSelect.innerHTML = '<option value="all">ทุกภาคการศึกษา</option>';
+                const termContainer = document.getElementById('term-options');
+                
+                let termHtml = `
+                    <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                        <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="all" checked>
+                        <span>ทุกภาคการศึกษา</span>
+                    </label>
+                `;
                 terms.forEach(term => {
-                    const option = document.createElement('option');
-                    option.value = term;
-                    option.textContent = `ภาคเรียนที่ ${term}`;
-                    termSelect.appendChild(option);
+                    termHtml += `
+                        <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded cursor-pointer text-sm">
+                            <input type="checkbox" class="term-cb rounded border-slate-300 text-primary focus:ring-primary" value="${term}">
+                            <span>ภาคเรียนที่ ${term}</span>
+                        </label>
+                    `;
                 });
+                termContainer.innerHTML = termHtml;
+                
+                // Re-setup term checkboxes after populating
+                setupCheckboxes('term-cb', 'term-btn-text', 'ทุกภาคการศึกษา', selectedTerms, applyFilters);
 
                 // Set updated time
                 const now = new Date();
@@ -329,8 +437,8 @@
 
         function applyFilters() {
             filteredData = courseData.filter(item => {
-                const matchTerm = currentTermFilter === 'all' || item.term === currentTermFilter;
-                const matchYear = currentYearFilter === 'all' || item.year === currentYearFilter;
+                const matchTerm = selectedTerms.length === 0 || selectedTerms.includes(item.term);
+                const matchYear = selectedYears.length === 0 || selectedYears.includes(item.year);
                 return matchTerm && matchYear;
             });
             updateDashboard();
