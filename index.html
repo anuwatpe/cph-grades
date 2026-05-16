@@ -17,6 +17,16 @@
                     fontFamily: {
                         sans: ['Kanit', 'sans-serif'],
                     },
+                    fontSize: {
+                        'xs': '0.875rem',
+                        'sm': '1rem',
+                        'base': '1.125rem',
+                        'lg': '1.25rem',
+                        'xl': '1.5rem',
+                        '2xl': '1.875rem',
+                        '3xl': '2.25rem',
+                        '4xl': '3rem',
+                    },
                     colors: {
                         primary: '#0ea5e9',
                         success: '#10b981',
@@ -35,6 +45,9 @@
     <!-- CSV Parser (PapaParse) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
+    <!-- Chart.js สำหรับวาดกราฟ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
         .loader {
@@ -52,6 +65,12 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
         }
+        
+        /* Custom Scrollbar for Table */
+        .table-container::-webkit-scrollbar { height: 8px; }
+        .table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .table-container::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex flex-col">
@@ -207,17 +226,30 @@
                 </div>
             </div>
 
-            <!-- Overall Progress Bar -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i> ภาพรวมความคืบหน้าการส่งเกรด
-                </h3>
-                <div class="relative w-full h-4 bg-slate-100 rounded-full overflow-hidden">
-                    <div id="progress-bar" class="absolute top-0 left-0 h-full bg-success transition-all duration-1000 ease-out" style="width: 0%"></div>
+            <!-- Grade Chart & Overall Progress -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Progress Bar -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 flex flex-col justify-center">
+                    <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i> ภาพรวมความคืบหน้าการส่งเกรด
+                    </h3>
+                    <div class="relative w-full h-6 bg-slate-100 rounded-full overflow-hidden mb-4">
+                        <div id="progress-bar" class="absolute top-0 left-0 h-full bg-success transition-all duration-1000 ease-out" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-slate-500">เริ่มต้น</span>
+                        <span class="text-2xl font-bold text-success" id="progress-text">0% สำเร็จ</span>
+                    </div>
                 </div>
-                <div class="flex justify-between mt-2 text-sm">
-                    <span class="text-slate-500">เริ่มต้น</span>
-                    <span class="font-bold text-success" id="progress-text">0% สำเร็จ</span>
+
+                <!-- Grade Chart -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-500"></i> ภาพรวมผลการศึกษา (รายวิชาที่ส่งเกรดแล้ว)
+                    </h3>
+                    <div class="relative h-64 w-full">
+                        <canvas id="gradeChart"></canvas>
+                    </div>
                 </div>
             </div>
 
@@ -225,21 +257,36 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                     <h3 class="text-lg font-semibold flex items-center gap-2">
-                        <i data-lucide="list" class="w-5 h-5 text-slate-500"></i> รายการสถานะรายวิชา
+                        <i data-lucide="list" class="w-5 h-5 text-slate-500"></i> รายการสถานะและผลการศึกษารายวิชา
                     </h3>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
+                <div class="overflow-x-auto table-container">
+                    <table class="w-full text-left border-collapse min-w-[1200px]">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
-                                <th class="p-4 font-medium">รหัสวิชา</th>
-                                <th class="p-4 font-medium">ชื่อรายวิชา</th>
-                                <th class="p-4 font-medium">ภาคเรียน</th>
-                                <th class="p-4 font-medium">ชั้นปี</th>
-                                <th class="p-4 font-medium">ผู้รับผิดชอบ</th>
-                                <th class="p-4 font-medium text-center">ลงเวลา</th>
-                                <th class="p-4 font-medium text-center">นำเสนอ</th>
-                                <th class="p-4 font-medium text-center">ส่งเกรด</th>
+                            <tr class="bg-slate-100 text-slate-600 text-sm border-b border-slate-200">
+                                <th class="p-3 font-medium align-middle" rowspan="2">รหัสวิชา</th>
+                                <th class="p-3 font-medium align-middle" rowspan="2">ชื่อรายวิชา</th>
+                                <th class="p-3 font-medium align-middle text-center" rowspan="2">ภาค/ปี</th>
+                                <th class="p-3 font-medium align-middle text-center" rowspan="2">ผู้รับผิดชอบ</th>
+                                <th class="p-2 font-medium text-center border-l border-slate-200 bg-slate-50" colspan="3">สถานะการดำเนินการ</th>
+                                <th class="p-2 font-medium text-center border-l border-slate-200 bg-sky-50 text-primary" colspan="10">ผลการศึกษา (เกรด)</th>
+                            </tr>
+                            <tr class="bg-slate-50 text-slate-500 text-xs border-b border-slate-200">
+                                <!-- Status -->
+                                <th class="p-2 font-medium text-center border-l border-slate-200">ลงเวลา</th>
+                                <th class="p-2 font-medium text-center">นำเสนอ</th>
+                                <th class="p-2 font-medium text-center">ส่งเกรด</th>
+                                <!-- Grades -->
+                                <th class="p-2 font-medium text-center border-l border-slate-200 bg-sky-50">A</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">B+</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">B</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">C+</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">C</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">D+</th>
+                                <th class="p-2 font-medium text-center bg-sky-50">D</th>
+                                <th class="p-2 font-medium text-center bg-sky-50 text-danger">F</th>
+                                <th class="p-2 font-medium text-center bg-sky-50 text-warning">I</th>
+                                <th class="p-2 font-medium text-center bg-sky-100 text-slate-700">รวม</th>
                             </tr>
                         </thead>
                         <tbody id="table-body" class="divide-y divide-slate-100">
@@ -277,6 +324,7 @@
         let filteredData = [];
         let selectedTerms = [];
         let selectedYears = [];
+        let gradeChartInstance = null; // สำหรับเก็บ instance ของกราฟ
 
         // Initialize Icons
         lucide.createIcons();
@@ -390,7 +438,19 @@
                         teacher: row['ผู้รับผิดชอบวิชา'] || row['ผู้รับผิดชอบรายวิชา'] || '-',
                         isScheduled: String(row['ลงเวลา']).trim().toUpperCase() === 'TRUE',
                         isPresented: String(row['นำเสนอ']).trim().toUpperCase() === 'TRUE',
-                        isSubmitted: String(row['ส่งเกรด']).trim().toUpperCase() === 'TRUE'
+                        isSubmitted: String(row['ส่งเกรด']).trim().toUpperCase() === 'TRUE',
+                        grades: {
+                            A: parseInt(row['A']) || 0,
+                            Bp: parseInt(row['B+']) || parseInt(row['B+ ']) || 0,
+                            B: parseInt(row['B']) || 0,
+                            Cp: parseInt(row['C+']) || parseInt(row['C+ ']) || 0,
+                            C: parseInt(row['C']) || 0,
+                            Dp: parseInt(row['D+']) || parseInt(row['D+ ']) || 0,
+                            D: parseInt(row['D']) || 0,
+                            F: parseInt(row['F']) || 0,
+                            I: parseInt(row['I']) || 0,
+                            Sum: parseInt(row['Sum']) || 0
+                        }
                     };
                 });
 
@@ -442,6 +502,7 @@
                 return matchTerm && matchYear;
             });
             updateDashboard();
+            updateChart();
             renderTable();
         }
 
@@ -472,6 +533,80 @@
             document.getElementById('progress-text').textContent = `${overallPercent}% สำเร็จ`;
         }
 
+        function updateChart() {
+            const ctx = document.getElementById('gradeChart').getContext('2d');
+            
+            // สรุปยอดรวมเกรดเฉพาะวิชาที่ส่งเกรดแล้ว
+            const totals = { A: 0, Bp: 0, B: 0, Cp: 0, C: 0, Dp: 0, D: 0, F: 0, I: 0 };
+            
+            filteredData.forEach(item => {
+                if (item.isSubmitted) {
+                    totals.A += item.grades.A;
+                    totals.Bp += item.grades.Bp;
+                    totals.B += item.grades.B;
+                    totals.Cp += item.grades.Cp;
+                    totals.C += item.grades.C;
+                    totals.Dp += item.grades.Dp;
+                    totals.D += item.grades.D;
+                    totals.F += item.grades.F;
+                    totals.I += item.grades.I;
+                }
+            });
+
+            const dataValues = [totals.A, totals.Bp, totals.B, totals.Cp, totals.C, totals.Dp, totals.D, totals.F, totals.I];
+
+            if (gradeChartInstance) {
+                // Update existing chart
+                gradeChartInstance.data.datasets[0].data = dataValues;
+                gradeChartInstance.update();
+            } else {
+                // Create new chart
+                gradeChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F', 'I'],
+                        datasets: [{
+                            label: 'จำนวนนักศึกษา',
+                            data: dataValues,
+                            backgroundColor: [
+                                '#10b981', // A - Emerald
+                                '#34d399', // B+ - Light Emerald
+                                '#0ea5e9', // B - Sky
+                                '#38bdf8', // C+ - Light Sky
+                                '#f59e0b', // C - Amber
+                                '#fbbf24', // D+ - Light Amber
+                                '#ef4444', // D - Red
+                                '#b91c1c', // F - Dark Red
+                                '#64748b'  // I - Slate
+                            ],
+                            borderRadius: 6,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                titleFont: { family: 'Kanit' },
+                                bodyFont: { family: 'Kanit' }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0, font: { family: 'Kanit' } }
+                            },
+                            x: {
+                                ticks: { font: { family: 'Kanit', weight: 'bold' } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         function renderTable() {
             const tbody = document.getElementById('table-body');
             const emptyState = document.getElementById('empty-table-state');
@@ -489,21 +624,32 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors group";
                 
+                // ตรวจสอบว่าส่งเกรดแล้วหรือยัง ถ้ายังให้แสดงขีด (-) ถ้าส่งแล้วให้แสดงตัวเลข
+                const g = item.grades;
+                const isSub = item.isSubmitted;
+
                 tr.innerHTML = `
-                    <td class="p-4 border-b border-slate-100 text-sm font-medium text-slate-700">${item.id}</td>
-                    <td class="p-4 border-b border-slate-100 text-sm text-slate-800">${item.name}</td>
-                    <td class="p-4 border-b border-slate-100 text-sm text-slate-500">${item.term !== '-' ? item.term : '-'}</td>
-                    <td class="p-4 border-b border-slate-100 text-sm text-slate-500">ปี ${item.year}</td>
-                    <td class="p-4 border-b border-slate-100 text-sm text-slate-600">${item.teacher}</td>
-                    <td class="p-4 border-b border-slate-100 text-center">
-                        ${getStatusBadge(item.isScheduled, 'ลงเวลาแล้ว')}
-                    </td>
-                    <td class="p-4 border-b border-slate-100 text-center">
-                        ${getStatusBadge(item.isPresented, 'นำเสนอแล้ว')}
-                    </td>
-                    <td class="p-4 border-b border-slate-100 text-center">
-                        ${getStatusBadge(item.isSubmitted, 'ส่งแล้ว')}
-                    </td>
+                    <td class="p-3 border-b border-slate-100 text-sm font-medium text-slate-700 whitespace-nowrap">${item.id}</td>
+                    <td class="p-3 border-b border-slate-100 text-sm text-slate-800 min-w-[200px]">${item.name}</td>
+                    <td class="p-3 border-b border-slate-100 text-sm text-slate-500 text-center">${item.term !== '-' ? item.term : '-'}</td>
+                    <td class="p-3 border-b border-slate-100 text-sm text-slate-600 text-center whitespace-nowrap">${item.teacher}</td>
+                    
+                    <!-- สถานะ -->
+                    <td class="p-2 border-b border-l border-slate-100 text-center">${getStatusIcon(item.isScheduled)}</td>
+                    <td class="p-2 border-b border-slate-100 text-center">${getStatusIcon(item.isPresented)}</td>
+                    <td class="p-2 border-b border-slate-100 text-center">${getStatusIcon(item.isSubmitted)}</td>
+                    
+                    <!-- เกรด -->
+                    <td class="p-2 border-b border-l border-slate-100 text-center bg-sky-50/30 text-sm font-medium">${isSub ? g.A : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.Bp : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.B : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.Cp : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.C : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.Dp : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm">${isSub ? g.D : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm ${isSub && g.F > 0 ? 'text-danger font-bold' : ''}">${isSub ? g.F : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-50/30 text-sm ${isSub && g.I > 0 ? 'text-warning font-bold' : ''}">${isSub ? g.I : '-'}</td>
+                    <td class="p-2 border-b border-slate-100 text-center bg-sky-100/50 text-sm font-bold text-slate-700">${isSub ? g.Sum : '-'}</td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -512,17 +658,11 @@
             lucide.createIcons();
         }
 
-        function getStatusBadge(status, trueText) {
+        function getStatusIcon(status) {
             if (status) {
-                return `
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                    <i data-lucide="check" class="w-3 h-3"></i> ${trueText}
-                </span>`;
+                return `<div class="flex justify-center"><i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500"></i></div>`;
             } else {
-                return `
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                    <i data-lucide="clock" class="w-3 h-3"></i> รอการดำเนินการ
-                </span>`;
+                return `<div class="flex justify-center"><i data-lucide="circle" class="w-5 h-5 text-slate-300"></i></div>`;
             }
         }
 
