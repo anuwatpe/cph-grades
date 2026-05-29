@@ -238,7 +238,7 @@
                         </h3>
                     </div>
                     <div class="p-3 bg-emerald-50 rounded-xl">
-                        <i data-lucide="check-circle" class="w-6 h-6 text-success"></i>
+                        <i data-lucide="file-spreadsheet" class="w-6 h-6 text-success"></i>
                     </div>
                 </div>
 
@@ -262,7 +262,7 @@
                 <!-- Progress Bar -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-1 flex flex-col justify-center">
                     <h3 class="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i> ภาพรวมความคืบหน้าการส่งเกรด
+                        <i data-lucide="trending-up" class="w-5 h-5 text-primary"></i> ภาพรวมความคืบหน้าภาพรวม
                     </h3>
                     <div class="relative w-full h-6 bg-slate-100 rounded-full overflow-hidden mb-4">
                         <div id="progress-bar" class="absolute top-0 left-0 h-full bg-success transition-all duration-1000 ease-out" style="width: 0%"></div>
@@ -271,12 +271,13 @@
                         <span class="text-slate-500">เริ่มต้น</span>
                         <span class="text-2xl font-bold text-success" id="progress-text">0% สำเร็จ</span>
                     </div>
+                     <p class="text-xs text-slate-400 mt-2 text-center">คำนวณจากรายวิชาที่ยืนยันเกรดในระบบแล้ว</p>
                 </div>
 
                 <!-- Grade Chart -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 lg:col-span-2">
                     <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-500"></i> ภาพรวมผลการศึกษา (รายวิชาที่ส่งเกรดแล้ว)
+                        <i data-lucide="bar-chart-2" class="w-5 h-5 text-indigo-500"></i> ภาพรวมผลการศึกษา (รายวิชาที่ส่งไฟล์เกรดแล้ว)
                     </h3>
                     <div class="relative h-64 w-full">
                         <canvas id="gradeChart"></canvas>
@@ -327,8 +328,8 @@
                                 <!-- Status -->
                                 <th class="p-1 font-medium text-center border-l border-slate-200">ลงเวลา</th>
                                 <th class="p-1 font-medium text-center">นำเสนอ</th>
-                                <th class="p-1 font-medium text-center">ส่งไฟล์เกรด</th>
-                                <th class="p-1 font-medium text-center">ยืนยันเกรด</th>
+                                <th class="p-1 font-medium text-center">ส่งไฟล์เกรด<br>(Excel)</th>
+                                <th class="p-1 font-medium text-center">ยืนยันเกรด<br>ในระบบ</th>
                                 <!-- Grades -->
                                 <th class="p-1 font-medium text-center border-l border-slate-200 bg-sky-50">A</th>
                                 <th class="p-1 font-medium text-center bg-sky-50">B+</th>
@@ -496,7 +497,9 @@
                         category: row['หมวดวิชา'] || '-',
                         isScheduled: String(row['ลงเวลา']).trim().toUpperCase() === 'TRUE',
                         isPresented: String(row['นำเสนอ']).trim().toUpperCase() === 'TRUE',
+                        // ตอนนี้ให้ดึงคอลัมน์ "ส่งเกรด" มาเก็บเป็น isSubmitted
                         isSubmitted: String(row['ส่งเกรด']).trim().toUpperCase() === 'TRUE',
+                        // และดึงคอลัมน์ "ยืนยันเกรดในระบบ" มาเก็บเป็น isConfirmed
                         isConfirmed: String(row['ยืนยันเกรดในระบบ']).trim().toUpperCase() === 'TRUE',
                         grades: {
                             A: parseInt(row['A']) || 0,
@@ -613,7 +616,7 @@
             document.getElementById('stat-confirmed').textContent = confirmed;
             document.getElementById('stat-confirmed-percent').textContent = `(${getPercent(confirmed)}%)`;
 
-            // Update Progress Bar (Based on Confirmed)
+            // Update Progress Bar ให้แสดงความสำเร็จจากคอลัมน์ "ยืนยันเกรด"
             const overallPercent = getPercent(confirmed);
             document.getElementById('progress-bar').style.width = `${overallPercent}%`;
             document.getElementById('progress-text').textContent = `${overallPercent}% สำเร็จ`;
@@ -622,7 +625,7 @@
         function updateChart() {
             const ctx = document.getElementById('gradeChart').getContext('2d');
             
-            // สรุปยอดรวมเกรดเฉพาะวิชาที่ส่งเกรดแล้ว
+            // สรุปยอดรวมเกรดเฉพาะวิชาที่ส่งไฟล์เกรด (Excel) แล้ว
             const totals = { A: 0, Bp: 0, B: 0, Cp: 0, C: 0, Dp: 0, D: 0, F: 0, I: 0 };
             
             filteredData.forEach(item => {
@@ -703,6 +706,7 @@
             filteredData.forEach(item => {
                 if (item.category && item.category.trim() === 'วิชาชีพ') {
                     totalProCourses++;
+                    // คำนวณจากวิชาที่ส่งไฟล์เกรดแล้ว
                     if (!item.isSubmitted) {
                         pending++;
                     } else {
@@ -828,7 +832,7 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors group";
                 
-                // ตรวจสอบว่าส่งเกรดแล้วหรือยัง ถ้ายังให้แสดงขีด (-) ถ้าส่งแล้วให้แสดงตัวเลข
+                // ตรวจสอบว่าส่งไฟล์เกรดแล้วหรือยัง ถ้ายังให้แสดงขีด (-) ถ้าส่งแล้วให้แสดงตัวเลข
                 const g = item.grades;
                 const isSub = item.isSubmitted;
 
